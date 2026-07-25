@@ -133,6 +133,37 @@ make
 ./wolf3d
 ```
 
-Cibles disponibles : `make` (build), `make clean`, `make fclean`, `make re`.
+Cibles disponibles : `make` (build), `make debug` (build avec `-g3` + AddressSanitizer), `make clean`, `make fclean`, `make re`.
 
-*(Dépendance : `libcsfml-dev` installable via `apt install libcsfml-dev` sur Debian/Ubuntu/KDE Neon)*
+### Installer CSFML
+
+> ⚠️ **Contrainte de version.** Le code cible **CSFML 2.6.x** (API 2.x). La dernière version amont est la 3.0, dont l'API est incompatible — n'installez pas la 3.x. La version majeure de SFML doit correspondre à celle de CSFML.
+
+**Linux (Debian / Ubuntu / KDE Neon)**
+
+```bash
+sudo apt install libcsfml-dev
+```
+
+**Windows**
+
+Le plus simple reste d'utiliser le devcontainer (voir plus bas) via Docker Desktop + WSL2 : mêmes dépendances que sous Linux, aucune installation manuelle. Pour un environnement Windows natif :
+
+1. Télécharger l'archive CSFML **2.6.x** depuis <https://www.sfml-dev.org/download/csfml/>, en choisissant le paquet correspondant au compilateur **MinGW (GCC)** — l'archive fournit les dossiers `include/`, `lib/` et `bin/`.
+2. Extraire l'archive, par exemple dans `C:\CSFML`.
+3. Compiler en pointant le Makefile vers ces dossiers :
+   ```bash
+   make CFLAGS="-std=c11 -Wall -Wextra -Iinclude -IC:/CSFML/include" \
+        LDFLAGS="-LC:/CSFML/lib -lcsfml-graphics -lcsfml-window -lcsfml-audio -lcsfml-system -lm"
+   ```
+4. Copier les `.dll` de `C:\CSFML\bin` **à côté de l'exécutable** avant de le lancer (Windows les cherche dans le dossier du binaire ou le `PATH`).
+
+Le compilateur GCC/`make` sous Windows s'obtient via [MSYS2](https://www.msys2.org/) ou MinGW-w64. MSYS2 propose aussi CSFML directement via `pacman` — vérifier alors que le paquet installé est bien en 2.x avant de l'utiliser.
+
+### Environnement conteneurisé (optionnel)
+
+Un dossier `.devcontainer/` fournit un environnement de build reproductible (GCC, Make, CSFML, GDB, Valgrind) identique pour tous les contributeurs, quelle que soit leur machine hôte. Ouvrir le projet dans VS Code puis **"Reopen in Container"**. La compilation se fait dans le conteneur ; le jeu s'exécute ensuite sur l'hôte.
+
+> **Le conteneur produit un binaire Linux (ELF), pas un `.exe` Windows.** Sur une machine Windows, le devcontainer tourne dans WSL2 (une VM Linux) : le binaire s'exécute donc **dans WSL2**, et sa fenêtre CSFML est affichée par WSLg comme une fenêtre Windows classique. On lance alors `./wolf3d` depuis le terminal WSL2, pas depuis PowerShell.
+>
+> Le devcontainer sert donc à garantir une compilation identique pour tous et à matcher l'environnement de correction (Linux) — il ne génère pas d'exécutable Windows distribuable. Pour un vrai `.exe` lançable sans WSL, il faut la compilation MinGW native décrite dans la section Windows ci-dessus. Ce projet étant corrigé sous Linux, cette dernière option n'est en pratique nécessaire pour aucun rendu.
