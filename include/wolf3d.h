@@ -9,6 +9,12 @@
     #include <stdio.h>
     #include <unistd.h>
 
+    // --- Error logging (rouge sur stderr) ---
+    #define ERR_RED    "\033[1;31m"
+    #define ERR_RESET  "\033[0m"
+
+    #define log_error(fmt, ...) fprintf(stderr, ERR_RED "[ERROR] " fmt ERR_RESET "\n", ##__VA_ARGS__)
+
 // --- Global constraints ---
     #define REF_WIDTH 1280
     #define REF_HEIGHT 720
