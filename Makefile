@@ -6,7 +6,9 @@ NAME    =	wolf3d
 
 CC      =	gcc
 
-SRC     =	$(shell find src -name '*.c')
+SRC     =	src/main.c 				\
+			src/core/platform.c 	\
+			src/map/level.c			\
 
 OBJ     =	$(SRC:.c=.o)
 
@@ -28,7 +30,12 @@ clean:
 
 fclean:	clean
 	rm -f $(NAME)
+	rm -f bsp_test
 
 re:	fclean all
 
-.PHONY:	all debug clean fclean re
+test_bsp:
+	$(CC) -o bsp_test src/map/level.c src/map/test_bsp.c
+	./bsp_test
+
+.PHONY:	all debug clean fclean re test_bsp

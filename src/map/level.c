@@ -6,9 +6,9 @@
 #include "../../include/wolf3d.h"
 #include <time.h>
 
-#define MAP_W       48
-#define MAP_H       48
-#define MIN_LEAF    12  // the min area to stop the recursive cut
+#define MAP_W       64
+#define MAP_H       64
+#define MIN_LEAF    8  // the min area to stop the recursive cut
 #define MIN_ROOM    4   // minimal size of a room
 #define MAX_ROOMS   64  // max number of rooms
 
@@ -35,6 +35,7 @@ typedef struct bsp_node {
 
 typedef struct gen_ctx {
     level_t *lvl;
+    int last_cut;
     vec2_t rooms[MAX_ROOMS]; // rooms' centers ordered by generation time
     int room_count;
 } gen_ctx_t;
@@ -111,7 +112,7 @@ static bsp_node_t *node_create(int x, int y, int w, int h)
     return node;
 }
 
-static bsp_free(bsp_node_t *node)
+static void bsp_free(bsp_node_t *node)
 {
     if (!node)
         return;
@@ -120,13 +121,14 @@ static bsp_free(bsp_node_t *node)
     free(node);
 }
 
-static int node_split(bsp_node_t *node)
+static int node_split(bsp_node_t *node, gen_ctx_t *ctx)
 {
-    int horizontal = rand_range(0, 1);
+    int horizontal = !(ctx->last_cut);
     int extent;
     int cut;
     rect_t a = node->area;
 
+    ctx->last_cut = horizontal;
     if (a.w > a.h && a.w / (float)a.h >= 1.25f)
         horizontal = 1;
     else if (a.h > a.w && a.h / (float)a.w >= 1.25f)
@@ -145,12 +147,12 @@ static int node_split(bsp_node_t *node)
     return (node->left && node->right);
 }
 
-static void bsp_build(bsp_node_t *node)
+static void bsp_build(bsp_node_t *node, gen_ctx_t *ctx)
 {
-    if (!node || !node_split(node))
+    if (!node || !node_split(node, ctx))
         return;
-    bsp_build(node->left);
-    bsp_build(node->right);
+    bsp_build(node->left, ctx);
+    bsp_build(node->right, ctx);
 }
 
 // --------------------------------------------------------------------------------
@@ -159,10 +161,10 @@ static void bsp_build(bsp_node_t *node)
 
 static void carve_room(gen_ctx_t *ctx, rect_t area)
 {
-    int rw = rand_range(MIN_ROOM, area.w - 2);
-    int rh = rand_range(MIN_ROOM, area.h - 2);
-    int rx = rand_range(area.x, area.x + rw - 1);
-    int ry = rand_range(area.y, area.y + rh - 1);
+    int rw = rand_range(MIN_ROOM, area.w * 2 / 3);
+    int rh = rand_range(MIN_ROOM, area.h * 2 / 3);
+    int rx = area.x + rand_range(1, area.w - rw - 1);
+    int ry = area.y + rand_range(1, area.h - rh - 1);
 
     for (int m = ry; m < ry + rh; m++) {
         for (int n = rx; n < rx + rw; n++)
@@ -217,7 +219,7 @@ static void connect_rooms(gen_ctx_t *ctx)
 }
 
 // --------------------------------------------------------------------------------
-// ------------------------------ SPAWN AND EXIT ----------------------------------
+// --------------------------- SPAWN AND EXIT -------------------------------------
 // --------------------------------------------------------------------------------
 
 static void place_spawn_exit(gen_ctx_t *ctx)
@@ -274,7 +276,8 @@ level_t *level_create(int floor_number)
     }
     ctx.lvl = lvl;
     ctx.room_count = 0;
-    bsp_build(root);
+    ctx.last_cut = 0;
+    bsp_build(root, &ctx);
     carve_leaves(&ctx, root);
     connect_rooms(&ctx);
     place_spawn_exit(&ctx);
@@ -307,7 +310,7 @@ int level_height(const level_t *lvl)
 int level_is_wall(const level_t *lvl, int x, int y)
 {
     if (x < 0 || y < 0 || x >= lvl->w || y >= lvl->h)
-        return 1;   // hors carte = mur (Ralf ne peut pas sortir)
+        return 1;
     return lvl->grid[y][x] == CELL_WALL;
 }
  
