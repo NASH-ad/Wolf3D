@@ -8,6 +8,8 @@ CC      =	gcc
 
 SRC     =	src/main.c 				\
 			src/core/platform.c 	\
+			src/core/app.c			\
+			src/core/session.c		\
 			src/map/level.c			\
 			src/player/player.c		\
 			src/engine/raycaster.c	\
