@@ -78,6 +78,7 @@ wolf3d/
 │   ├── platform.h        # fenêtre, clock, input
 │   ├── assets.h
 │   ├── level.h
+│   ├── player.h
 │   ├── entities.h
 │   ├── renderer.h
 │   ├── audio.h
@@ -87,7 +88,8 @@ wolf3d/
 │   ├── core/             # boucle principale, cycle de vie app_t / session_t
 │   ├── engine/           # raycasting, texture mapping, sol/plafond, z-buffer
 │   ├── map/              # génération BSP, API level_t
-│   ├── entities/         # joueur, ennemis, items, IA
+│   ├── player/
+│   ├── entities/         # ennemis, items, IA
 │   ├── ui/               # scenes, zones cliquables, rendu des menus
 │   └── audio/            # musique et effets sonores
 └── assets/
@@ -111,9 +113,9 @@ wolf3d/
 
 ## Roadmap
 
-- [ ] Définition des types et des headers publics par module
+- [✅] Définition des types et des headers publics par module
 - [ ] Cycle de vie `app_t` / `session_t` / `level_t` (create / destroy)
-- [ ] Génération de map par BSP
+- [✅] Génération de map par BSP
 - [ ] Moteur de raycasting (murs)
 - [ ] Texture mapping
 - [ ] Rendu sol/plafond
@@ -133,7 +135,7 @@ make
 ./wolf3d
 ```
 
-Cibles disponibles : `make` (build), `make debug` (build avec `-g3` + AddressSanitizer), `make clean`, `make fclean`, `make re`.
+Cibles disponibles : `make` (build), `make debug` (build avec `-g3` + AddressSanitizer), `make clean`, `make fclean`, `make re`, `make test_bsp`.
 
 ### Installer CSFML
 
