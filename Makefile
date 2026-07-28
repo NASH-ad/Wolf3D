@@ -9,6 +9,7 @@ CC      =	gcc
 SRC     =	src/main.c 				\
 			src/core/platform.c 	\
 			src/map/level.c			\
+			src/player/player.c		\
 
 OBJ     =	$(SRC:.c=.o)
 
