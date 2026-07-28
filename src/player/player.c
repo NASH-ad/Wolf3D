@@ -63,7 +63,7 @@ void player_strafe(player_t *p, const level_t *lvl, float side, float delta)
 // dir ET plane doivent tourner ensemble pour garder le plan perpendiculaire.
 void player_rotate(player_t *p, float sign, float delta)
 {
-    float angle = (sign / sign) * p->rot_speed * delta;
+    float angle = sign * p->rot_speed * delta;
     float c = cosf(angle);
     float s = sinf(angle);
     float old_dx = p->dir.x;

@@ -10,6 +10,8 @@ SRC     =	src/main.c 				\
 			src/core/platform.c 	\
 			src/map/level.c			\
 			src/player/player.c		\
+			src/engine/raycaster.c	\
+			src/engine/renderer.c	\
 
 OBJ     =	$(SRC:.c=.o)
 
