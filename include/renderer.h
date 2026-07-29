@@ -14,7 +14,9 @@ typedef struct renderer {
     sfRenderWindow *window;      // a simple reference to the window on which to draw
     int             width;
     int             height;
-    sfRectangleShape *column;    // used to render each ray of the raycasting
+    sfUint8        *pixels;
+    sfTexture      *screen_tex;
+    sfSprite       *screen_sprite;
 } renderer_t;
 
 // --- Life cycle ---
