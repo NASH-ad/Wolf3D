@@ -14,8 +14,12 @@
 
 // Grid cells
 typedef enum {
-    CELL_WALL  = 0,
-    CELL_FLOOR = 1,
+    CELL_FLOOR      = 0,
+    CELL_CINDER     = 1,
+    CELL_CONCRETE   = 2,
+    CELL_STEEL      = 3,
+    CELL_HAZARD     = 4,
+    CELL_CHEM       = 5,
 } cell_t;
 
 // --- Life cycle ---
@@ -28,6 +32,7 @@ int      level_height(const level_t *lvl);
 int      level_is_wall(const level_t *lvl, int x, int y);
 vec2_t   level_spawn(const level_t *lvl);
 vec2_t   level_exit(const level_t *lvl);
+int level_tile(const level_t *lvl, int x, int y);
 
 // --- Debug (used by tests/test_bsp.c) ---
 void     level_print_ascii(const level_t *lvl);

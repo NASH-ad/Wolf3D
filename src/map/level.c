@@ -33,11 +33,18 @@ typedef struct bsp_node {
     struct bsp_node *right;
 } bsp_node_t;
 
+typedef struct room {
+    rect_t rect;
+    cell_t theme;
+} room_t;
+
 typedef struct gen_ctx {
     level_t *lvl;
     int last_cut;
-    vec2_t rooms[MAX_ROOMS]; // rooms' centers ordered by generation time
+    room_t rooms[MAX_ROOMS]; // rooms' centers ordered by generation time
     int room_count;
+    int spawn_idx;
+    int exit_idx;
 } gen_ctx_t;
 
 // --------------------------------------------------------------------------------
@@ -61,6 +68,11 @@ static int rand_range(int min, int max)
         return min;
     }
     return min + (rand() % (max - min + 1));
+}
+
+static vec2_t room_center(room_t r)
+{
+    return (vec2_t){r.rect.x + r.rect.w / 2, r.rect.y + r.rect.h / 2};
 }
 
 // --------------------------------------------------------------------------------
@@ -88,7 +100,7 @@ static cell_t **grid_alloc(int w, int h)
         }
 
         for (int i = 0; i < w; i++)
-            grid[y][i] = CELL_WALL;
+            grid[y][i] = CELL_CONCRETE;
     }
 
     return grid;
@@ -171,8 +183,8 @@ static void carve_room(gen_ctx_t *ctx, rect_t area)
             ctx->lvl->grid[m][n] = CELL_FLOOR;
     }
     if (ctx->room_count < MAX_ROOMS) {
-        ctx->rooms[ctx->room_count].x = rx + (rw / 2);
-        ctx->rooms[ctx->room_count].y = ry + (rh / 2);
+        ctx->rooms[ctx->room_count].rect = (rect_t){rx, ry, rw, rh};
+        ctx->rooms[ctx->room_count].theme = CELL_CONCRETE;
         ctx->room_count += 1;
     }
 }
@@ -215,7 +227,7 @@ static void carve_corridor(level_t *lvl, vec2_t a, vec2_t b)
 static void connect_rooms(gen_ctx_t *ctx)
 {
     for (int i = 1; i < ctx->room_count; i++)
-        carve_corridor(ctx->lvl, ctx->rooms[i - 1], ctx->rooms[i]);
+        carve_corridor(ctx->lvl, room_center(ctx->rooms[i - 1]), room_center(ctx->rooms[i]));
 }
 
 // --------------------------------------------------------------------------------
@@ -225,24 +237,84 @@ static void connect_rooms(gen_ctx_t *ctx)
 static void place_spawn_exit(gen_ctx_t *ctx)
 {
     float best = -1.0f;
-    int   far = 0;
  
+    ctx->spawn_idx = 0;
+    ctx->exit_idx = 0;
     if (ctx->room_count == 0) {
         ctx->lvl->spawn = (vec2_t){1.5f, 1.5f};
         ctx->lvl->exit = (vec2_t){1.5f, 1.5f};
         return;
     }
-    ctx->lvl->spawn = ctx->rooms[0];
+    ctx->lvl->spawn = room_center(ctx->rooms[ctx->spawn_idx]);
+    vec2_t s = ctx->lvl->spawn;
     for (int i = 1; i < ctx->room_count; i++) {
-        float dx = ctx->rooms[i].x - ctx->rooms[0].x;
-        float dy = ctx->rooms[i].y - ctx->rooms[0].y;
+        float dx = room_center(ctx->rooms[i]).x - s.x;
+        float dy = room_center(ctx->rooms[i]).y - s.y;
         float d = dx * dx + dy * dy;
         if (d > best) {
             best = d;
-            far = i;
+            ctx->exit_idx = i;
         }
     }
-    ctx->lvl->exit = ctx->rooms[far];
+    ctx->lvl->exit = room_center(ctx->rooms[ctx->exit_idx]);
+}
+
+// -------------------------------------------------------------------------
+// ----------------------- ASSIGN THEME TO ROOMS ---------------------------
+// -------------------------------------------------------------------------
+
+static cell_t random_theme(void)
+{
+    int roll = rand_range(0, 99);
+
+    if (roll < 55)
+        return CELL_CONCRETE;
+    if (roll < 80)
+        return CELL_STEEL;
+    return CELL_CHEM;
+}
+
+static void assign_themes(gen_ctx_t *ctx)
+{
+    for (int i = 0; i < ctx->room_count; i++)
+        ctx->rooms[i].theme = random_theme();
+    if (ctx->room_count > 0) {
+        ctx->rooms[ctx->spawn_idx].theme = CELL_CINDER;
+        ctx->rooms[ctx->exit_idx].theme = CELL_HAZARD;
+    }
+}
+
+// Peint une cellule uniquement si c'est un mur (jamais le sol)
+static void set_wall(level_t *lvl, int x, int y, cell_t theme)
+{
+    if (x < 0 || y < 0 || x >= lvl->w || y >= lvl->h)
+        return;
+    if (lvl->grid[y][x] != CELL_FLOOR)
+        lvl->grid[y][x] = theme;
+}
+
+// Peint le contour d'un rectangle de salle
+static void paint_ring(level_t *lvl, rect_t r, cell_t theme)
+{
+    for (int x = r.x - 1; x <= r.x + r.w; x++) {
+        set_wall(lvl, x, r.y - 1, theme);
+        set_wall(lvl, x, r.y + r.h, theme);
+    }
+    for (int y = r.y - 1; y <= r.y + r.h; y++) {
+        set_wall(lvl, r.x - 1, y, theme);
+        set_wall(lvl, r.x + r.w, y, theme);
+    }
+}
+
+static void paint_rooms(gen_ctx_t *ctx)
+{
+    for (int i = 0; i < ctx->room_count; i++)
+        paint_ring(ctx->lvl, ctx->rooms[i].rect, ctx->rooms[i].theme);
+    // Spawn et exit repeints en dernier pour dominer leurs bordures partagées
+    if (ctx->room_count > 0) {
+        paint_ring(ctx->lvl, ctx->rooms[ctx->spawn_idx].rect, CELL_CINDER);
+        paint_ring(ctx->lvl, ctx->rooms[ctx->exit_idx].rect, CELL_HAZARD);
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -281,6 +353,8 @@ level_t *level_create(int floor_number)
     carve_leaves(&ctx, root);
     connect_rooms(&ctx);
     place_spawn_exit(&ctx);
+    assign_themes(&ctx);
+    paint_rooms(&ctx);
     bsp_free(root);
     return lvl;
 }
@@ -296,7 +370,11 @@ void level_destroy(level_t *lvl)
     }
     free(lvl);
 }
- 
+
+// ----------------------------------------------------------------------------------------
+// -------------------------------------- GETTERS -----------------------------------------
+// ----------------------------------------------------------------------------------------
+
 int level_width(const level_t *lvl)
 {
     return lvl->w;
@@ -311,7 +389,7 @@ int level_is_wall(const level_t *lvl, int x, int y)
 {
     if (x < 0 || y < 0 || x >= lvl->w || y >= lvl->h)
         return 1;
-    return lvl->grid[y][x] == CELL_WALL;
+    return lvl->grid[y][x] != CELL_FLOOR;
 }
  
 vec2_t level_spawn(const level_t *lvl)
@@ -323,7 +401,20 @@ vec2_t level_exit(const level_t *lvl)
 {
     return lvl->exit;
 }
- 
+
+// -----------------------------------------------------------------------
+// --------------------------- DEBUG -------------------------------------
+// -----------------------------------------------------------------------
+static char tile_char(cell_t t)
+{
+    if (t == CELL_FLOOR)    return '.';
+    if (t == CELL_CINDER)   return 'c';
+    if (t == CELL_STEEL)    return 's';
+    if (t == CELL_HAZARD)   return 'H';
+    if (t == CELL_CHEM)     return 'x';
+    return '#';   // béton
+}
+
 void level_print_ascii(const level_t *lvl)
 {
     for (int y = 0; y < lvl->h; y++) {
@@ -332,8 +423,8 @@ void level_print_ascii(const level_t *lvl)
                 putchar('S');
             else if (x == (int)lvl->exit.x && y == (int)lvl->exit.y)
                 putchar('E');
-            else if (lvl->grid[y][x] == CELL_WALL)
-                putchar('#');
+            else if (lvl->grid[y][x] != CELL_FLOOR)
+                putchar(tile_char(lvl->grid[y][x]));
             else
                 putchar('.');
         }
