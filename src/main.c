@@ -1,25 +1,19 @@
 //
-// main file
+// Wolf3D — entry point
 //
 
-#include "../include/wolf3d.h"
-#include "../include/platform.h"
+#include "app.h"
+
+#define WIN_W  1280
+#define WIN_H  720
 
 int main(void)
 {
-    platform_t *platform = platform_create(1280, 720, "Wolf3D");
-    if (!platform)
-        return 1;
-    sfEvent event = {0};
+    app_t *app = app_create(WIN_W, WIN_H, "Wolf3D");
 
-    while (platform_is_open(platform)) {
-        while (platform_poll_event(platform, &event)) {
-            if (event.type == sfEvtClosed)
-                sfRenderWindow_close(platform->window);
-        }
-        platform_begin_frame(platform);
-        platform_end_frame(platform);
-    }
-    platform_destroy(platform);
+    if (!app)
+        return 84;
+    app_run(app);
+    app_destroy(app);
     return 0;
 }

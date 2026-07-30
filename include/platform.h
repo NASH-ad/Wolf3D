@@ -29,7 +29,7 @@ int         platform_begin_frame(platform_t *p);  // clear the screen and update
 int         platform_end_frame(platform_t *p); // display the frame
 
 // Input 
-int         platform_key_dowm(sfKeyCode key);
+int         platform_key_down(sfKeyCode key);
 int         platform_mouse_down(sfMouseButton button);
 vec2_t      platform_mouse_pos(const platform_t *p);
 
