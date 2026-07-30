@@ -5,6 +5,10 @@
 #include "../../include/platform.h"
 #include "../../include/wolf3d.h"
 
+// -----------------------------------------------------------------------------------
+// Life cycle
+// ----------------------------------------------------------------------------------
+
 platform_t *platform_create(int width, int height, const char *title)
 {
     platform_t *p = malloc(sizeof(platform_t));
@@ -39,6 +43,10 @@ void platform_destroy(platform_t *p)
         sfClock_destroy(p->clock);
     free(p);
 }
+
+// -----------------------------------------------------------------------------
+// Utilitaries
+// -----------------------------------------------------------------------------
 
 int platform_is_open(const platform_t *p)
 {

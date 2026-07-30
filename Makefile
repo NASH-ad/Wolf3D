@@ -14,6 +14,7 @@ SRC     =	src/main.c 				\
 			src/player/player.c		\
 			src/engine/raycaster.c	\
 			src/engine/renderer.c	\
+			src/engine/assets.c		\
 
 OBJ     =	$(SRC:.c=.o)
 

@@ -8,15 +8,18 @@
 #include "platform.h"
 #include "renderer.h"
 #include "session.h"
+#include "assets.h"
 
-// Version réduite : we'll add assets / audio / ui / settings through the implementation.
+// Définition interne : invisible du reste du projet (type opaque).
+// Version réduite : on ajoutera audio / ui / settings au fil des modules.
 struct app {
     platform_t *platform;
+    assets_t   *assets;
     renderer_t *renderer;
     session_t  *session;
 };
 
-// --- Window events ---
+// --- Événements fenêtre (fermeture, Échap) ---
 static void app_handle_events(app_t *app)
 {
     sfEvent event;
@@ -29,7 +32,9 @@ static void app_handle_events(app_t *app)
     }
 }
 
-// --- Keyboard inputs (qwerty keyboard version) ---
+// --- Entrées clavier (état instantané) ---
+// NB AZERTY : SFML lit la POSITION physique nommée en QWERTY. Les touches
+// physiques Z/Q/S/D d'un clavier AZERTY déclenchent donc W/A/S/D ici.
 static void app_handle_input(app_t *app, float dt)
 {
     player_t      *p = session_player(app->session);
@@ -53,17 +58,20 @@ app_t *app_create(int width, int height, const char *title)
 {
     app_t *app = malloc(sizeof(struct app));
 
-    if (!app) {
-        log_error("Failed to allocate memory for app_t");
+    if (!app)
         return NULL;
-    }
     app->platform = NULL;
+    app->assets = NULL;
     app->renderer = NULL;
     app->session = NULL;
     app->platform = platform_create(width, height, title);
     if (!app->platform)
         return (app_destroy(app), NULL);
-    app->renderer = renderer_create(app->platform->window, width, height);
+    app->assets = assets_create();
+    if (!app->assets)
+        return (app_destroy(app), NULL);
+    app->renderer = renderer_create(app->platform->window, width, height,
+        app->assets);
     if (!app->renderer)
         return (app_destroy(app), NULL);
     app->session = session_create();
@@ -80,6 +88,8 @@ void app_destroy(app_t *app)
         session_destroy(app->session);
     if (app->renderer)
         renderer_destroy(app->renderer);
+    if (app->assets)
+        assets_destroy(app->assets);
     if (app->platform)
         platform_destroy(app->platform);
     free(app);

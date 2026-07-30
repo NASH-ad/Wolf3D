@@ -402,6 +402,13 @@ vec2_t level_exit(const level_t *lvl)
     return lvl->exit;
 }
 
+int level_tile(const level_t *lvl, int x, int y)
+{
+    if (x < 0 || y < 0 || x >= lvl->w || y >= lvl->h)
+        return CELL_CONCRETE;
+    return lvl->grid[y][x];
+}
+
 // -----------------------------------------------------------------------
 // --------------------------- DEBUG -------------------------------------
 // -----------------------------------------------------------------------
