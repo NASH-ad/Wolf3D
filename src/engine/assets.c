@@ -23,13 +23,17 @@ assets_t *assets_create(void)
         return NULL;
     for (int i = 0; i < WALL_TEX_COUNT; i++)
         a->walls[i] = NULL;
+    a->floor = NULL;
+    a->ceiling = NULL;
     for (int i = 1; i < WALL_TEX_COUNT; i++) {
         a->walls[i] = sfImage_createFromFile(WALL_PATHS[i]);
-        if (!a->walls[i]) {
-            assets_destroy(a);
-            return NULL;
-        }
+        if (!a->walls[i])
+            return (assets_destroy(a), NULL);
     }
+    a->floor = sfImage_createFromFile("assets/textures/bunker_floor_64.png");
+    a->ceiling = sfImage_createFromFile("assets/textures/bunker_ceiling_64.png");
+    if (!a->floor || !a->ceiling)
+        return (assets_destroy(a), NULL);
     return a;
 }
 
@@ -40,6 +44,10 @@ void assets_destroy(assets_t *a)
     for (int i = 0; i < WALL_TEX_COUNT; i++)
         if (a->walls[i])
             sfImage_destroy(a->walls[i]);
+    if (a->floor)
+        sfImage_destroy(a->floor);
+    if (a->ceiling)
+        sfImage_destroy(a->ceiling);
     free(a);
 }
 
@@ -48,4 +56,14 @@ const sfImage *assets_wall(const assets_t *a, int cell_type)
     if (cell_type <= 0 || cell_type >= WALL_TEX_COUNT || !a->walls[cell_type])
         return a->walls[CELL_CONCRETE];   // repli sûr : béton
     return a->walls[cell_type];
+}
+
+const sfImage *assets_floor(const assets_t *a)
+{
+    return a->floor;
+}
+
+const sfImage *assets_ceiling(const assets_t *a)
+{
+    return a->ceiling;
 }

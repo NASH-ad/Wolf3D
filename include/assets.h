@@ -16,6 +16,9 @@ typedef struct assets {
     // Indexé par cell_t : walls[CELL_CINDER], walls[CELL_STEEL], etc.
     // walls[CELL_FLOOR] (index 0) reste NULL — le sol n'est pas un mur.
     sfImage *walls[WALL_TEX_COUNT];
+    // Textures uniques (non indexées par cell_t) pour le floor casting
+    sfImage *floor;
+    sfImage *ceiling;
 } assets_t;
 
 // --- Cycle de vie ---
@@ -25,5 +28,7 @@ void      assets_destroy(assets_t *a);
 // --- Accès ---
 // Renvoie l'image de mur pour un type de cellule (jamais NULL pour un mur valide).
 const sfImage *assets_wall(const assets_t *a, int cell_type);
+const sfImage *assets_floor(const assets_t *a);
+const sfImage *assets_ceiling(const assets_t *a);
 
 #endif // ASSETS_H

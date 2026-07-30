@@ -24,6 +24,7 @@ platform_t *platform_create(int width, int height, const char *title)
         log_error("Failed to create window");
         return NULL;
     }
+    sfRenderWindow_setFramerateLimit(p->window, 60);
     p->clock = sfClock_create();
     if (!p->clock) {
         log_error("Failed to create clock");
